@@ -1,0 +1,43 @@
+# Jupyter
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+env/
+.env
+
+# Data files
+data/raw/
+data/processed/
+*.csv
+*.parquet
+*.pkl
+*.pickle
+
+# Models
+*.pt
+*.pth
+*.bin
+*.safetensors
+models/
+embeddings/
+
+# NLP
+nltk_data/
+corpus/
+
+# Outputs & logs
+logs/
+runs/
+outputs/
+*.log
+wandb/
+
+# OS
+.DS_Store
+Thumbs.db
