@@ -41,3 +41,7 @@ wandb/
 # OS
 .DS_Store
 Thumbs.db
+
+# Book texts
+texts/
+*.txt
