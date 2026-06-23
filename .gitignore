@@ -9,7 +9,7 @@ __pycache__/
 # Virtual environments
 venv/
 env/
-.env
+*.env
 
 # Data files
 data/raw/
@@ -41,7 +41,3 @@ wandb/
 # OS
 .DS_Store
 Thumbs.db
-
-# Book texts
-texts/
-*.txt
