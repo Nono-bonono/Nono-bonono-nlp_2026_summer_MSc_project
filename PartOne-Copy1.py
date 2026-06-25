@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import math
 from collections import Counter
+import re
 
 nlp = spacy.load("en_core_web_sm")        # Raising the input length for spaCy
 nlp.max_length = 2000000
