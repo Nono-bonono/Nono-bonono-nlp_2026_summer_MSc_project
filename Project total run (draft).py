@@ -3,13 +3,13 @@
 # ----------------> uncomment if needed below
 # pip install openai
 
+# Run __main__ at the bottom of the file, along with running parts 2 and 3.
+
 #############################################
 # Library installation
 #############################################
 
 import nltk                               # Libraries for part 1
-from nltk.corpus import cmudict
-cmu = cmudict.dict()
 import pandas as pd
 import spacy
 import os
@@ -23,6 +23,10 @@ from nltk.corpus import stopwords
 nltk.download("cmudict")
 nltk.download("punkt")
 nltk.download("punkt_tab")
+nltk.download("wordnet")
+nltk.download("stopwords")
+from nltk.corpus import cmudict
+cmu = cmudict.dict()
 
 import sklearn                                            # Additional libraries for part 2
 from sklearn.ensemble import RandomForestClassifier
@@ -30,7 +34,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.metrics import f1_score, classification_report
-
 
 from openai import OpenAI                             # Additional libraries for part 3
 from dotenv import load_dotenv
@@ -200,24 +203,21 @@ def main():
     for t in books_sp.itertuples():
         print(t.title, '\n', pmi_calc(t.text, 'she'), '\n')
 
-
-if __name__ == "__main__":
-    main()
-
 #############################################
 # PART 2
 #############################################
 
-h10k = pd.read_csv('hansard10000.csv')
+def run_part2():
+    h10k = pd.read_csv('hansard10000.csv')
+    
+    h10k['party'] = h10k['party'].replace('Labour (Co-op)', 'Labour')
 
-h10k['party'] = h10k['party'].replace('Labour (Co-op)', 'Labour')
+    h10k = h10k[h10k['party'].isin(['Conservative', 'Labour', 'Scottish National Party', 'Liberal Democrat'])]
+    h10k = h10k[h10k['speech_class'].isin(['Speech'])]
 
-h10k = h10k[h10k['party'].isin(['Conservative', 'Labour', 'Scottish National Party', 'Liberal Democrat'])]
-h10k = h10k[h10k['speech_class'].isin(['Speech'])]
+    h10k = h10k[h10k['speech'].str.len() > 1000]
 
-h10k = h10k[h10k['speech'].str.len() > 1000]
-
-print('Shape of the dataframe:', h10k.shape)
+    print('Shape of the dataframe:', h10k.shape)
 
 
 # Initial vectorizing and setup
@@ -225,23 +225,23 @@ print('Shape of the dataframe:', h10k.shape)
 
 # Vectorizing the data and setting up Random Forest and SVM
 
-vec_h10k = TfidfVectorizer(stop_words = 'english', max_features = 3000)            # Setting parameters for vectors
-x = vec_h10k.fit_transform(h10k['speech'])
-y = h10k['party']
+    vec_h10k = TfidfVectorizer(stop_words = 'english', max_features = 3000)            # Setting parameters for vectors
+    x = vec_h10k.fit_transform(h10k['speech'])
+    y = h10k['party']
 
-x_train, x_test, y_train, y_test = train_test_split(x, y, stratify = y, random_state = 26)       # Splitting the set
+    x_train, x_test, y_train, y_test = train_test_split(x, y, stratify = y, random_state = 26)       # Splitting the set
 
-rando = RandomForestClassifier(n_estimators = 300, random_state = 26).fit(x_train, y_train)      # Random Forest
-support_vm = SVC(kernel = 'linear', random_state = 26).fit(x_train, y_train)                     # Support Vector Machine
+    rando = RandomForestClassifier(n_estimators = 300, random_state = 26).fit(x_train, y_train)      # Random Forest
+    support_vm = SVC(kernel = 'linear', random_state = 26).fit(x_train, y_train)                     # Support Vector Machine
 
 
-# Classification of parties and F1 score
+    # Classification of parties and F1 score
 
-for name, clf in [('RandomForest', rando), ('SVM', support_vm)]:
-    party_pred = clf.predict(x_test)
-    print(name)
-    print('Macro avg. F1:', f1_score(y_test, party_pred, average = 'macro', zero_division = 0))
-    print(classification_report(y_test, party_pred, zero_division = 0))
+    for name, clf in [('RandomForest', rando), ('SVM', support_vm)]:
+        party_pred = clf.predict(x_test)
+        print(name)
+        print('Macro avg. F1:', f1_score(y_test, party_pred, average = 'macro', zero_division = 0))
+        print(classification_report(y_test, party_pred, zero_division = 0))
 
 
 # Vectorizing and setup with n-grams
@@ -250,197 +250,203 @@ for name, clf in [('RandomForest', rando), ('SVM', support_vm)]:
 # Vectorizing the data and setting up Random Forest and SVM
 # Adding uni-, bi- and trigrams to parameters.
 
-vec_h10k_ngram = TfidfVectorizer(stop_words = 'english', max_features = 3000, ngram_range = (1, 3))     # Setting parameters for vectors
-x1 = vec_h10k_ngram.fit_transform(h10k['speech'])
-y1 = h10k['party']
+    vec_h10k_ngram = TfidfVectorizer(stop_words = 'english', max_features = 3000, ngram_range = (1, 3))     # Setting parameters for vectors
+    x1 = vec_h10k_ngram.fit_transform(h10k['speech'])
+    y1 = h10k['party']
 
-x1_train, x1_test, y1_train, y1_test = train_test_split(x1, y1, stratify = y1, random_state = 26)       # Splitting the set
+    x1_train, x1_test, y1_train, y1_test = train_test_split(x1, y1, stratify = y1, random_state = 26)       # Splitting the set
 
-rando1 = RandomForestClassifier(n_estimators = 300, random_state = 26).fit(x1_train, y1_train)      # Random Forest
-support_vm1 = SVC(kernel = 'linear', random_state = 26).fit(x1_train, y1_train)                     # Support Vector Machine
+    rando1 = RandomForestClassifier(n_estimators = 300, random_state = 26).fit(x1_train, y1_train)      # Random Forest
+    support_vm1 = SVC(kernel = 'linear', random_state = 26).fit(x1_train, y1_train)                     # Support Vector Machine
 
 # Classification of parties and F1 score
 
-for name1, clf in [('RandomForest', rando1), ('SVM', support_vm1)]:
-    party_pred1 = clf.predict(x1_test)
-    print(name1)
-    print('Macro avg. F1:', f1_score(y1_test, party_pred1, average = 'macro', zero_division = 0))
-    print(classification_report(y1_test, party_pred1, zero_division = 0))
+    for name1, clf in [('RandomForest', rando1), ('SVM', support_vm1)]:
+        party_pred1 = clf.predict(x1_test)
+        print(name1)
+        print('Macro avg. F1:', f1_score(y1_test, party_pred1, average = 'macro', zero_division = 0))
+        print(classification_report(y1_test, party_pred1, zero_division = 0))
 
 
 # Vectorizing and setup with custom tokenizer
 #############################################
 
-lemmatizer = WordNetLemmatizer()                  # Setting some variables for the function
-stop_w = set(stopwords.words('english'))
+    lemmatizer = WordNetLemmatizer()                  # Setting some variables for the function
+    stop_w = set(stopwords.words('english'))
 
-def custom_toke(text):
-    ''' 
-    Takes words and tokenizes them 
-    First puts all letters into lowercase, then drops anything that's not letters
-    Lemmatizes for consistency across similar words
-    Removes stopwords
-    '''
+    def custom_toke(text):
+        ''' 
+        Takes words and tokenizes them 
+        First puts all letters into lowercase, then drops anything that's not letters
+        Lemmatizes for consistency across similar words
+        Removes stopwords
+        '''
 
-    text = text.lower()
-    toke = re.findall(r'[a-z]+', text)
-    toke = [t for t in toke if len(t) > 2]
-    toke = [lemmatizer.lemmatize(t, pos = 'v') for t in toke]     # Adding verbs into lemmatizer mix
-    toke = [t for t in toke if t not in stop_w]
+        text = text.lower()
+        toke = re.findall(r'[a-z]+', text)
+        toke = [t for t in toke if len(t) > 2]
+        toke = [lemmatizer.lemmatize(t, pos = 'v') for t in toke]     # Adding verbs into lemmatizer mix
+        toke = [t for t in toke if t not in stop_w]
     
-    return toke
+        return toke
 
-# Testing out the new tokenizer
+    # Testing out the new tokenizer
 
-vec_h10k_custom = TfidfVectorizer(tokenizer = custom_toke, max_features = 2000)       # Setting parameters for vectors
+    vec_h10k_custom = TfidfVectorizer(tokenizer = custom_toke, token_pattern = None, max_features = 2000)       # Setting parameters for vectors
 
-x2 = vec_h10k_custom.fit_transform(h10k['speech'])
-y2 = h10k['party']
+    x2 = vec_h10k_custom.fit_transform(h10k['speech'])
+    y2 = h10k['party']
 
-x2_train, x2_test, y2_train, y2_test = train_test_split(x2, y2, stratify = y2, random_state = 26)       # Splitting the set
+    x2_train, x2_test, y2_train, y2_test = train_test_split(x2, y2, stratify = y2, random_state = 26)       # Splitting the set
 
-rando2 = RandomForestClassifier(n_estimators = 300, random_state = 26).fit(x2_train, y2_train)      # Random Forest
-support_vm2 = SVC(kernel = 'linear', random_state = 26).fit(x2_train, y2_train)                     # Support Vector Machine
+    rando2 = RandomForestClassifier(n_estimators = 300, random_state = 26).fit(x2_train, y2_train)      # Random Forest
+    support_vm2 = SVC(kernel = 'linear', random_state = 26).fit(x2_train, y2_train)                     # Support Vector Machine
 
-# Classification of parties and F1 score
+    # Classification of parties and F1 score
 
-for name2, clf in [('RandomForest', rando2), ('SVM', support_vm2)]:
-    party_pred2 = clf.predict(x2_test)
-    print(name2)
-    print('Macro avg. F1:', f1_score(y2_test, party_pred2, average = 'macro', zero_division = 0))
-    print(classification_report(y2_test, party_pred2, zero_division = 0))
+    for name2, clf in [('RandomForest', rando2), ('SVM', support_vm2)]:
+        party_pred2 = clf.predict(x2_test)
+        print(name2)
+        print('Macro avg. F1:', f1_score(y2_test, party_pred2, average = 'macro', zero_division = 0))
+        print(classification_report(y2_test, party_pred2, zero_division = 0))
 
 
 #############################################
 # PART 3
 #############################################
 
+def run_part3():
 # Loading API key through a .env file. The .env file is not uploaded to github.
 
-load_dotenv('the_nlp.env')  
-api_key = os.getenv("OPENROUTER_API_KEY")                 # With credit
+    load_dotenv('the_nlp.env')  
+    api_key = os.getenv("OPENROUTER_API_KEY")                 # With credit
 
-client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
+    if not api_key:
+        raise RuntimeError("API_KEY not found, check the_nlp.env")
+        
+    client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
 
 # Importing and checking speeches
 # Potential for function here
 
-h5 = pd.read_csv('hansard500.csv')
+    h5 = pd.read_csv('hansard500.csv')
 
-h5['party'] = h5['party'].replace('Labour (Co-op)', 'Labour')
-h5 = h5[h5['speech_class'].isin(['Speech'])]
-h5 = h5[h5['party'].isin(['Conservative', 'Labour', 'Scottish National Party', 'Liberal Democrat'])]
+    h5['party'] = h5['party'].replace('Labour (Co-op)', 'Labour')
+    h5 = h5[h5['speech_class'].isin(['Speech'])]
+    h5 = h5[h5['party'].isin(['Conservative', 'Labour', 'Scottish National Party', 'Liberal Democrat'])]
 
-print(h5['speech_class'].value_counts(), '\n')
-print(h5['party'].value_counts(), '\n')
+    h5.shape
 
-h5.shape
+    x = h5['speech']          
+    y = h5['party']
 
-x = h5['speech']          
-y = h5['party']
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, stratify=y, random_state=26)                    # Same seed as part 2 for consistency
 
-x_train, x_test, y_train, y_test = train_test_split(
-    x, y, stratify=y, random_state=26)                    # Same seed as part 2 for consistency
-
-labels = sorted(y.unique().tolist())                      # Creating a list of party labels to feed into LLM
-label_str = ", ".join(labels)
+    labels = sorted(y.unique().tolist())                      # Creating a list of party labels to feed into LLM
+    label_str = ", ".join(labels)
 
 # function to talk to LLM
 # Built in rate limit error catcher
 
-def classify(prompt, max_retries=5):
-    for attempt in range(max_retries):
-        try:
-            resp = client.chat.completions.create(
-                model="meta-llama/llama-3.3-70b-instruct",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0,
-                max_tokens=10,
-            )
-            return resp.choices[0].message.content.strip()
-        except RateLimitError:
-            wait = 30 * (attempt + 1)   
-            print(f"Rate-limited, waiting {wait}s (attempt {attempt+1}/{max_retries})")
-            time.sleep(wait)
-    raise RuntimeError("Still rate-limited after retries")
+    def classify(prompt, max_retries=5):
+        for attempt in range(max_retries):
+            try:
+                resp = client.chat.completions.create(
+                    model="meta-llama/llama-3.3-70b-instruct",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0,
+                    max_tokens=10,
+                )
+                return resp.choices[0].message.content.strip()
+            except RateLimitError:
+                wait = 30 * (attempt + 1)   
+                print(f"Rate-limited, waiting {wait}s (attempt {attempt+1}/{max_retries})")
+                time.sleep(wait)
+        raise RuntimeError("Still rate-limited after retries")
 
 # Function to normalize output
 
-def normalize(out):
-    out = out.lower()
-    for lab in labels:
-        if lab.lower() in out:
-            return lab
+    def normalize(out):
+        out = out.lower()
+        for lab in labels:
+            if lab.lower() in out:
+                return lab
 
-def build_examples(n_per_party=1):
-    shots = []
-    for lab in labels:
-        idx = y_train[y_train == lab].index[:n_per_party]
-        for i in idx:
-            shots.append((x_train.loc[i][:600], lab))
-    return shots
+    def build_examples(n_per_party=1):
+        shots = []
+        for lab in labels:
+            idx = y_train[y_train == lab].index[:n_per_party]
+            for i in idx:
+                shots.append((x_train.loc[i][:600], lab))
+        return shots
 
-example_block = "\n\n".join(
-    f"Speech: {sp}\nParty: {lab}" for sp, lab in build_examples())
+    example_block = "\n\n".join(
+        f"Speech: {sp}\nParty: {lab}" for sp, lab in build_examples())
 
-ZERO_SHOT_PROMPT = """Classify UK parliamentary speeches by the speaker's political party.
-Read the speech and respond with exactly one label from this list: ['Conservative', 'Labour', 'Scottish National Party', 'Liberal Democrat']
-Respond with the label only. Do not add an explanation or punctuation. There should be nothing beyond the label.
+    ZERO_SHOT_PROMPT = """Classify UK parliamentary speeches by the speaker's political party.
+    Read the speech and respond with exactly one label from this list: ['Conservative', 'Labour', 'Scottish National Party', 'Liberal Democrat']
+    Respond with the label only. Do not add an explanation or punctuation. There should be nothing beyond the label.
 
-Speech:
-{speech}
+    Speech:
+    {speech}
 
-Party:""" 
-
-
-FEW_SHOT_PROMPT = """Classify UK parliamentary speeches by the speaker's political party.
-Read the speech and respond with exactly one label from this list: ['Conservative', 'Labour', 'Scottish National Party', 'Liberal Democrat']
-Respond with the label only. Do not add an explanation or punctuation. There should be nothing beyond the label.
-
-Here are some labelled examples:
-
-{examples}
-
-Now classify this speech. Respond with the label only.
-
-Speech:
-{speech}
-
-Party:"""
+    Party:""" 
 
 
-def run(prompt_template, few_shot=False):
-    '''
-    Function to run prompt into LLM
-    '''
+    FEW_SHOT_PROMPT = """Classify UK parliamentary speeches by the speaker's political party.
+    Read the speech and respond with exactly one label from this list: ['Conservative', 'Labour', 'Scottish National Party', 'Liberal Democrat']
+    Respond with the label only. Do not add an explanation or punctuation. There should be nothing beyond the label.
+
+    Here are some labelled examples:
+
+    {examples}
+
+    Now classify this speech. Respond with the label only.
+
+    Speech:
+    {speech}
+
+    Party:"""
+
+
+    def run(prompt_template, few_shot=False):
+        '''
+        Function to run prompt into LLM
+        '''
     
-    preds = []
-    for i, s in enumerate(x_test):
-        if few_shot:
-            p = prompt_template.format(labels=label_str, examples=example_block, speech=s[:3000])
-        else:
-            p = prompt_template.format(labels=label_str, speech=s[:4000])
-        preds.append(normalize(classify(p)))
-        if (i + 1) % 10 == 0:
-            print(f"  {i+1}/{len(x_test)} done")
-        time.sleep(3.5)                                     # stay under 20 req/min to regulate usage
-    return preds
+        preds = []
+        for i, s in enumerate(x_test):
+            if few_shot:
+                p = prompt_template.format(examples=example_block, speech=s[:3000])
+            else:
+                p = prompt_template.format(labels=label_str, speech=s[:4000])
+            preds.append(normalize(classify(p)))
+            if (i + 1) % 10 == 0:
+                print(f"  {i+1}/{len(x_test)} done")
+            time.sleep(3.5)                                     # stay under 20 req/min to regulate usage
+        return preds
 
-def score(name, preds):
-    '''
-    Prints out scores from LLM answer
-    '''
+    def score(name, preds):
+        '''
+        Prints out scores from LLM answer
+        '''
     
-    print(f"\n===== {name} =====")
-    print("Macro-avg F1:", f1_score(y_test, preds, average='macro', zero_division=0))
-    print(classification_report(y_test, preds, zero_division=0))
+        print(f"\n===== {name} =====")
+        print("Macro-avg F1:", f1_score(y_test, preds, average='macro', zero_division=0))
+        print(classification_report(y_test, preds, zero_division=0))
 
-# Zero shot prompt results
-zero_preds = run(ZERO_SHOT_PROMPT, few_shot=False)
-score("ZERO-SHOT", zero_preds)
+    # Zero shot prompt results
+    zero_preds = run(ZERO_SHOT_PROMPT, few_shot=False)
+    score("ZERO-SHOT", zero_preds)
 
-# Few shot prompt results
-few_preds  = run(FEW_SHOT_PROMPT, few_shot=True)
-score("FEW-SHOT", few_preds)
+    # Few shot prompt results
+    few_preds  = run(FEW_SHOT_PROMPT, few_shot=True)
+    score("FEW-SHOT", few_preds)
 
 #############################################
+
+if __name__ == "__main__":
+    main()
+    # run_part2()
+    # run_part3()
