@@ -195,11 +195,11 @@ def main():
     books_sp = parse(books)  
 
     for t in books_sp.itertuples():
-        print(t.title, '\n', syntactic_subs(t.text), '\n')
+        print(t.title, '\n', syntactic_subs(t.parsed), '\n')
     for t in books_sp.itertuples():
-        print(t.title, '\n', pmi_calc(t.text, 'he'), '\n')
+        print(t.title, '\n', pmi_calc(t.parsed, 'he'), '\n')
     for t in books_sp.itertuples():
-        print(t.title, '\n', pmi_calc(t.text, 'she'), '\n')
+        print(t.title, '\n', pmi_calc(t.parsed, 'she'), '\n')
 
 #############################################
 # PART 2
@@ -295,7 +295,8 @@ def run_part2():
 
     # Testing out the new tokenizer
 
-    vec_h10k_custom = TfidfVectorizer(tokenizer = custom_toke, token_pattern = None, max_features = 2000)       # Setting parameters for vectors
+    vec_h10k_custom = TfidfVectorizer(tokenizer = custom_toke, token_pattern = None, 
+                                      max_features = 2000, ngram_range = (1, 1))       # Setting parameters for vectors
 
     x2 = vec_h10k_custom.fit_transform(h10k['speech'])
     y2 = h10k['party']
@@ -318,7 +319,7 @@ def run_part2():
 # PART 3
 #############################################
 
-def run_part3():'
+def run_part3():
     '''
     Part 2 has been out behind this function to control running of the script better
     '''

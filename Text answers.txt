@@ -1,0 +1,45 @@
+Nik Hannigan - NLP project
+
+One issue to note from the start is the imbalanced data. I mention this before any of the responses because it impacts all the results.
+Lib Dems have a very small set of speeches and it makes it almost impossible to get accurate results, either from RFs, SVMs or LLMs. 
+The Macro F1 for all classifications hangs between 0.4-0.6. If I were doing this project for a client I would probably recommend dropping Lib Dem speeches as a label. You could also argue for dropping SNP speeches although that is less clear cut, there is a somewhat more reasonable amount of speeches from the SNP to train/test on.
+
+#################
+2(e)
+#################
+My customer tokenizer (custom_toke) applies 3 transformations to the text on top of the standard sklearn. Sklearns tokenizer simply lowercases the text and then splits things into 2+ characters.
+
+My tokenizer:
+1) drops numbers, which is cleaner and not something that should impact classification anyway
+2) lemmatizes, with space for verbs, so that fewer features are used per concept
+3) raises the bar to 3 characters to drop words like 'us' and 'mr' which keeps the pool of tokens smaller
+
+Benefits:
+I have managed to drop features to 2000 without loss of performance.
+0.42 & 0.47 macro f1 for RF and SVMs respectively using my tokenizer
+vs.
+0.43 & 0.46 macro f1 for RF and SVMs respectively using standard tokenizer and uni-bi-trigrams
+
+(Again, the major impact in my opinion being the lack of lib dem speeches)
+
+Costs:
+Lemmatizing is a lot more effort and so might be reconsidered for very large corpuses.
+
+#################
+3(a)
+#################
+Initially I selected a model off Huggingface (bart-large-mnli) but realized this was the wrong model to use as it doesn't infer from a prompt. Also, there would have been better zero-shot models to use.
+
+I settled on meta-llama/llama-3.3-70b-instruct via openrouter. The model is strong and instruction tuned and easily accessible. Initially I tried to use a free API but kept running into ratelimiting to the extent I was unable to work. The actual usage in terms of cost is very low so I paid $10+tax in credits and that worked fine.
+
+I set temperature to 0, as I want the model to be greedy and choose the most likley label. I want to avoid any 'creativity'. I also limited the response to 10 tokens so that the model wouldn't feel tempted to add more than the label as a response.
+
+#################
+3(d)
+#################
+Zero shot f1 macro avg: 0.53
+Few shot f1 macro average: 0.59
+
+The few shot performed better. The constraints were 1 speech per party as an example. I would say there is definite semantic value in the issues and catchwords used in different political parties and so having examples should raise the f1 score for an LLM. However, the gain was relatively modest and a zero shot approach is still effective. Interestingly the largest impact from the few shot was for the low-data SNP. Whetehr this is a fluke or not is hard to say but perhaps having an example is more useful in lower data scenarios.
+
+The prompts were very constrained, I was trying to be as consice as possible and make absolutely sure the LLM only returned a single label per speech. I added a normalize function to make sure answers got mapped back to labels and truncated every speech input into the LLM to 4000 characters (3000 for few shot) for economy of use.
