@@ -1,9 +1,10 @@
-#NLP assessment template 2026
+#NLP assessment template 2026 - Nik Hannigan
 
-# ----------------> uncomment if needed below
+# ----------------> uncomment line below if needed
 # pip install openai
 
 # Run __main__ at the bottom of the file, along with running parts 2 and 3.
+# main(), run_part2() and run_part3() can be commented out, depending on which parts you want to run.
 
 #############################################
 # Library installation
@@ -40,7 +41,6 @@ from dotenv import load_dotenv
 import os
 import time
 from openai import RateLimitError
-
 
 #############################################
 # PART 1
@@ -85,9 +85,10 @@ def nltk_ttr(books):
     
     ttrs = {}
 
-    for _, row in books.iterrows():
+    for _, row in books.iterrows():                    # Iterates down through the column
         tokens = nltk.word_tokenize(row["text"])
-        words = [token.lower() for token in tokens if token.isalpha()]  # Project asks for no punctuation. This is the simplest way, even if a few contractions are lost
+        words = [token.lower() for token in tokens if token.isalpha()]  # Project asks for no punctuation. 
+                                                                        # This is the simplest way, even if a few contractions are lost
         ttrs[row["title"]] = len(set(words)) / len(words)               # Actual ratio calculation
 
     return ttrs
@@ -142,7 +143,6 @@ def parse(df, store_path="texts/parsed.pickle"):
 def syntactic_subs(text, n = 10):
     '''Function that counts the 10 most common syntactic subjects for a text'''
 
-    text = nlp(text)           # converting incoming text into spaCy tokens
     subjects = [
         token.text.lower()
         for token in text
@@ -156,8 +156,6 @@ def pmi_calc(text, subject, n = 10):
     '''
     This function takes a subject and calculates  most associated verbs by pointwise mutual information
     '''
-
-    text = nlp(text)          # converting incoming text into spaCy tokens
     
     subj_verb_cnts = defaultdict(Counter)   # Setting counters for subjects, verbs and pairings
     verb_cnts = Counter()
@@ -191,8 +189,8 @@ def main():
     books = read_novels(path)
     print(books.head())
 
-    print("TTRs:\n", nltk_ttr(df))
-    print("FK scores:\n", flesch_kincaid(df))
+    print("TTRs:\n", nltk_ttr(books))
+    print("FK scores:\n", flesch_kincaid(books))
 
     books_sp = parse(books)  
 
@@ -208,6 +206,12 @@ def main():
 #############################################
 
 def run_part2():
+    '''
+    Part 2 has been out behind this function to control running of the script better
+    '''
+
+    # loading and wrangling the data
+    
     h10k = pd.read_csv('hansard10000.csv')
     
     h10k['party'] = h10k['party'].replace('Labour (Co-op)', 'Labour')
@@ -223,7 +227,7 @@ def run_part2():
 # Initial vectorizing and setup
 #############################################
 
-# Vectorizing the data and setting up Random Forest and SVM
+    # Vectorizing the data and setting up Random Forest and SVM
 
     vec_h10k = TfidfVectorizer(stop_words = 'english', max_features = 3000)            # Setting parameters for vectors
     x = vec_h10k.fit_transform(h10k['speech'])
@@ -247,8 +251,7 @@ def run_part2():
 # Vectorizing and setup with n-grams
 #############################################
 
-# Vectorizing the data and setting up Random Forest and SVM
-# Adding uni-, bi- and trigrams to parameters.
+    # Vectorizing the data and setting up Random Forest and SVM with uni-, bi- and trigrams as parameters.
 
     vec_h10k_ngram = TfidfVectorizer(stop_words = 'english', max_features = 3000, ngram_range = (1, 3))     # Setting parameters for vectors
     x1 = vec_h10k_ngram.fit_transform(h10k['speech'])
@@ -259,7 +262,7 @@ def run_part2():
     rando1 = RandomForestClassifier(n_estimators = 300, random_state = 26).fit(x1_train, y1_train)      # Random Forest
     support_vm1 = SVC(kernel = 'linear', random_state = 26).fit(x1_train, y1_train)                     # Support Vector Machine
 
-# Classification of parties and F1 score
+    # Classification of parties and F1 score
 
     for name1, clf in [('RandomForest', rando1), ('SVM', support_vm1)]:
         party_pred1 = clf.predict(x1_test)
@@ -315,19 +318,23 @@ def run_part2():
 # PART 3
 #############################################
 
-def run_part3():
-# Loading API key through a .env file. The .env file is not uploaded to github.
+def run_part3():'
+    '''
+    Part 2 has been out behind this function to control running of the script better
+    '''
+    # Loading API key through a .env file. The .env file is not uploaded to github.
 
     load_dotenv('the_nlp.env')  
     api_key = os.getenv("OPENROUTER_API_KEY")                 # With credit
 
-    if not api_key:
+    if not api_key:                                           # Raises error in case of missing API key
         raise RuntimeError("API_KEY not found, check the_nlp.env")
         
     client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
 
-# Importing and checking speeches
-# Potential for function here
+    # Importing and checking speeches
+    # Wrangling data in line with previous imports
+    ########################################
 
     h5 = pd.read_csv('hansard500.csv')
 
@@ -337,7 +344,7 @@ def run_part3():
 
     h5.shape
 
-    x = h5['speech']          
+    x = h5['speech']                 # defining x and y
     y = h5['party']
 
     x_train, x_test, y_train, y_test = train_test_split(
@@ -350,13 +357,19 @@ def run_part3():
 # Built in rate limit error catcher
 
     def classify(prompt, max_retries=5):
+        '''
+        This function takes a prompt from the user and feeds it into the connected LLM
+        Initially I was using a free version and hitting rate limits a lot so it is designed to notify if there are rate
+        limit issues.
+        I decided to keep the rate limit checker in as it is still useful to see if there is an issue.
+        '''
         for attempt in range(max_retries):
             try:
                 resp = client.chat.completions.create(
                     model="meta-llama/llama-3.3-70b-instruct",
                     messages=[{"role": "user", "content": prompt}],
-                    temperature=0,
-                    max_tokens=10,
+                    temperature=0,                                      # Temperature set at 0 as I want the LLM to be as unimaginative as possible
+                    max_tokens=10,                                      # Limiting tokens to limit answer, we only want a single label
                 )
                 return resp.choices[0].message.content.strip()
             except RateLimitError:
@@ -368,12 +381,16 @@ def run_part3():
 # Function to normalize output
 
     def normalize(out):
+        '''This is a function to normalize output from the LLM and maintain consistency'''
+        
         out = out.lower()
         for lab in labels:
             if lab.lower() in out:
                 return lab
 
     def build_examples(n_per_party=1):
+        '''Function to build some examples for the few shot process. All taken from the training data'''
+        
         shots = []
         for lab in labels:
             idx = y_train[y_train == lab].index[:n_per_party]
@@ -412,7 +429,7 @@ def run_part3():
 
     def run(prompt_template, few_shot=False):
         '''
-        Function to run prompt into LLM
+        This function wraps around the 'classify()' function and reurtns predictions for the political speeches
         '''
     
         preds = []
@@ -420,16 +437,16 @@ def run_part3():
             if few_shot:
                 p = prompt_template.format(examples=example_block, speech=s[:3000])
             else:
-                p = prompt_template.format(labels=label_str, speech=s[:4000])
+                p = prompt_template.format(speech=s[:4000])
             preds.append(normalize(classify(p)))
             if (i + 1) % 10 == 0:
-                print(f"  {i+1}/{len(x_test)} done")
+                print(f"  {i+1}/{len(x_test)} done")            # tracks progress
             time.sleep(3.5)                                     # stay under 20 req/min to regulate usage
         return preds
 
     def score(name, preds):
         '''
-        Prints out scores from LLM answer
+        Prints out formatted scores from LLM answer
         '''
     
         print(f"\n===== {name} =====")
@@ -448,5 +465,5 @@ def run_part3():
 
 if __name__ == "__main__":
     main()
-    # run_part2()
-    # run_part3()
+    run_part2()
+    run_part3()
