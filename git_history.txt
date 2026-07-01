@@ -1,3 +1,15 @@
+commit 0b500e865e16929d5a4534bd04fce0202cb540c9
+Author: Nono_Bonono <nikkiarih@gmail.com>
+Date:   Fri Jun 26 11:50:49 2026 +0100
+
+    Finished textual answers, exported git, finishing touches to hand in. More updates will follow post hand in
+
+ ...raft).py => Project total run - Nik Hannigan.py |  11 +-
+ Text answers.txt                                   |  45 ++++
+ git_history.txt                                    | 298 +++++++++++++++++++++
+ github setup and code.ipynb                        |  26 +-
+ 4 files changed, 368 insertions(+), 12 deletions(-)
+
 commit d49cc5dec8d7df640071a04c9bfbef2b504a3d32
 Author: Nono_Bonono <nikkiarih@gmail.com>
 Date:   Fri Jun 26 10:43:19 2026 +0100
